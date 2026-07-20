@@ -4,21 +4,14 @@ import {
   ArrowLeft, 
   Mail,
   User,
-  Phone,
   Calendar,
   Clock,
   AlertCircle,
   Download,
   Share2,
-  Star,
-  StarOff,
-  CheckCircle,
-  XCircle,
   MessageSquare,
   Reply,
-  Send,
-  Trash2,
-  Tag
+  Send
 } from 'lucide-react';
 import { useUserMessages } from '../../../hooks/useUserMessages';
 import { useTheme } from '../../../context/ThemeContext';
@@ -26,7 +19,7 @@ import { useTheme } from '../../../context/ThemeContext';
 const UserMessagesView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { currentMessage, isLoading, error, getById, clearCurrent, clearError, markAsRead, toggleStar } = useUserMessages();
+  const { currentMessage, isLoading, error, getById, clearCurrent, clearError } = useUserMessages();
   const { isDark } = useTheme();
   const [replyMode, setReplyMode] = useState(false);
   const [replyMessage, setReplyMessage] = useState('');
@@ -44,21 +37,9 @@ const UserMessagesView = () => {
   const fetchData = async () => {
     try {
       await getById(id);
-      // Auto mark as read when viewing
-      if (currentMessage?.status === 'unread') {
-        markAsRead(id);
-      }
     } catch (error) {
       console.error('Error fetching message:', error);
       setLocalError('Failed to load message');
-    }
-  };
-
-  const handleToggleStar = () => {
-    if (currentMessage) {
-      toggleStar(currentMessage._id);
-      // Update local state
-      currentMessage.isStarred = !currentMessage.isStarred;
     }
   };
 
@@ -87,39 +68,6 @@ const UserMessagesView = () => {
       hour: '2-digit',
       minute: '2-digit'
     }).format(date);
-  };
-
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      unread: { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', label: 'Unread' },
-      read: { icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20', label: 'Read' },
-      spam: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Spam' }
-    };
-    const config = statusConfig[status] || statusConfig.unread;
-    const Icon = config.icon;
-    
-    return (
-      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border ${config.bg} ${config.color} ${config.border}`}>
-        <Icon size={14} />
-        {config.label}
-      </span>
-    );
-  };
-
-  const getPriorityBadge = (priority) => {
-    const priorityConfig = {
-      high: { color: 'text-red-400', bg: 'bg-red-500/10', label: 'High Priority' },
-      medium: { color: 'text-yellow-400', bg: 'bg-yellow-500/10', label: 'Medium Priority' },
-      low: { color: 'text-green-400', bg: 'bg-green-500/10', label: 'Low Priority' }
-    };
-    const config = priorityConfig[priority] || priorityConfig.low;
-    
-    return (
-      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${config.bg} ${config.color}`}>
-        <Tag size={14} />
-        {config.label}
-      </span>
-    );
   };
 
   if (isLoading) {
@@ -177,26 +125,6 @@ const UserMessagesView = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={handleToggleStar}
-            className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2
-              ${isDark 
-                ? 'bg-gray-800/50 text-gray-300 hover:bg-gray-800' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-          >
-            {currentMessage.isStarred ? (
-              <>
-                <Star size={18} className="text-yellow-400 fill-yellow-400" />
-                Unstar
-              </>
-            ) : (
-              <>
-                <StarOff size={18} />
-                Star
-              </>
-            )}
-          </button>
-          <button
             onClick={handleReply}
             className="px-4 py-2 bg-[#27CBCB] text-black rounded-lg hover:bg-[#27CBCB]/80 transition-colors flex items-center gap-2"
           >
@@ -233,63 +161,21 @@ const UserMessagesView = () => {
                     </div>
                     <div>
                       <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {currentMessage.name}
+                        {currentMessage.name || 'Anonymous'}
                       </h2>
                       <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                        {currentMessage.email}
+                        {currentMessage.email || 'No email provided'}
                       </p>
                     </div>
                   </div>
-                  {currentMessage.phone && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <Phone size={16} className="text-gray-500" />
-                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                        {currentMessage.phone}
-                      </p>
-                    </div>
-                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  {getStatusBadge(currentMessage.status)}
-                  {getPriorityBadge(currentMessage.priority)}
-                  {currentMessage.isStarred && (
-                    <span className="flex items-center gap-1 px-3 py-1 bg-yellow-400/10 text-yellow-400 rounded-full text-sm border border-yellow-400/20">
-                      <Star size={14} className="fill-yellow-400" />
-                      Starred
-                    </span>
-                  )}
+                  <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <Clock size={14} className="inline mr-1" />
+                    {formatDate(currentMessage.createdAt)}
+                  </span>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Subject & Details */}
-        <div className={`rounded-xl p-6 border
-          ${isDark ? 'bg-[#111111] border-gray-800' : 'bg-white border-gray-200'}`}
-        >
-          <div className="space-y-4">
-            <div>
-              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Subject</p>
-              <p className={`text-lg font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {currentMessage.subject}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Received</p>
-                <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  {formatDate(currentMessage.createdAt)}
-                </p>
-              </div>
-              {currentMessage.source && (
-                <div>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Source</p>
-                  <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    {currentMessage.source}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>

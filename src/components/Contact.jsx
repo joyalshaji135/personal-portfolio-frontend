@@ -3,6 +3,7 @@ import { FaGithub, FaLinkedin } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { contactService } from "../services/public-api/contactService";
+import { emailService } from "../services/public-api/emailService";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -37,6 +38,25 @@ const getSocialDisplayName = (name) => {
   return names[name?.toLowerCase()] || name || "Website";
 };
 
+// Toast notification component
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 5000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+  
+  return (
+    <div className={`fixed top-6 right-6 z-50 ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg max-w-sm animate-slide-in`}>
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{type === 'success' ? '✅' : '❌'}</span>
+        <p className="text-sm font-medium">{message}</p>
+      </div>
+    </div>
+  );
+};
+
 const Contact = () => {
   const [contactData, setContactData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -65,12 +85,6 @@ const Contact = () => {
 
     fetchContact();
   }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3000);
-    return () => clearTimeout(t);
-  }, [toast]);
 
   const validate = () => {
     const e = {};
@@ -102,18 +116,28 @@ const Contact = () => {
     setFormLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE}/send-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+      // Send email using the email service
+      const response = await emailService.sendEmail(form);
+      
+      // Check if email was sent successfully
+      if (response.status) {
+        setForm({ name: "", email: "", message: "" });
+        setToast({
+          message: "Thank you for connecting with me! I'll get back to you soon.",
+          type: "success"
+        });
+      } else {
+        setToast({
+          message: response.message || "Failed to send message. Please try again.",
+          type: "error"
+        });
+      }
+    } catch (err) {
+      console.error('Error sending email:', err);
+      setToast({
+        message: err.response?.data?.message || "Failed to send message. Please try again.",
+        type: "error"
       });
-
-      if (!res.ok) throw new Error();
-
-      setForm({ name: "", email: "", message: "" });
-      setToast("Message sent successfully ✓");
-    } catch {
-      setToast("Failed to send message");
     } finally {
       setFormLoading(false);
     }
@@ -154,112 +178,117 @@ const Contact = () => {
   }
 
   return (
-    <section className="relative px-4 sm:px-6 md:px-8 mx-auto py-20 max-w-6xl">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(39,203,203,0.08),transparent_40%)]" />
+    <>
+      {/* Toast Notification */}
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
 
-      <div className="grid md:grid-cols-2 gap-16 items-center">
-        <motion.div variants={fade} initial="hidden" whileInView="show">
-          <h2 className="text-5xl font-bold leading-tight text-transparent bg-clip-text bg-linear-to-r from-gray-100 to-gray-400">
-            {heading}
-          </h2>
+      <section className="relative px-4 sm:px-6 md:px-8 mx-auto py-20 max-w-6xl">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(39,203,203,0.08),transparent_40%)]" />
 
-          <p className="mt-6 text-gray-400 max-w-md text-lg">
-            {description}
-          </p>
+        <div className="grid md:grid-cols-2 gap-16 items-center">
+          <motion.div variants={fade} initial="hidden" whileInView="show">
+            <h2 className="text-5xl font-bold leading-tight text-transparent bg-clip-text bg-linear-to-r from-gray-100 to-gray-400">
+              {heading}
+            </h2>
 
-          <div className="mt-10 space-y-4">
-            {socials.map((social) => (
-              <motion.a
-                key={social._id}
-                whileHover={{ x: 6 }}
-                href={social.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-4 p-4 rounded-xl border border-gray-800 bg-gray-900/40 backdrop-blur-sm hover:border-[#27CBCB]/30 transition-colors"
-              >
-                <span className="text-2xl">
-                  {getSocialIcon(social.icon)}
-                </span>
-                <div>
-                  <p className="font-medium text-gray-200">
-                    {getSocialDisplayName(social.name)}
-                  </p>
-                  <p className="text-sm text-gray-400">{social.description}</p>
-                </div>
-                <ExternalLink className="ml-auto opacity-60 text-gray-400" size={18} />
-              </motion.a>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.form
-          variants={fade}
-          initial="hidden"
-          whileInView="show"
-          onSubmit={handleSubmit}
-          className="p-8 rounded-3xl border border-gray-800 bg-linear-to-b from-gray-900/60 to-gray-900/30 backdrop-blur-xl space-y-5"
-        >
-          <h3 className="text-2xl font-semibold text-gray-200">
-            Send a Message
-          </h3>
-
-          <div>
-            <input
-              name="name"
-              placeholder="Your Name"
-              value={form.name}
-              onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-emerald-500 outline-none transition-colors text-gray-200 placeholder-gray-500"
-            />
-            {errors.name && (
-              <p className="text-sm text-red-400 mt-1">{errors.name}</p>
-            )}
-          </div>
-
-          <div>
-            <input
-              name="email"
-              placeholder="Email Address"
-              value={form.email}
-              onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-emerald-500 outline-none transition-colors text-gray-200 placeholder-gray-500"
-            />
-            {errors.email && (
-              <p className="text-sm text-red-400 mt-1">{errors.email}</p>
-            )}
-          </div>
-
-          <div>
-            <textarea
-              name="message"
-              rows="5"
-              placeholder="Your Message"
-              value={form.message}
-              onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-emerald-500 outline-none transition-colors text-gray-200 placeholder-gray-500 resize-none"
-            />
-            {errors.message && (
-              <p className="text-sm text-red-400 mt-1">{errors.message}</p>
-            )}
-          </div>
-
-          <button 
-            type="submit"
-            disabled={formLoading}
-            className="cursor-pointer w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Send className="w-4 h-4" />
-            {formLoading ? "Sending..." : "Send Message"}
-          </button>
-
-          {toast && (
-            <p className={`text-sm text-center ${toast.includes('success') ? 'text-green-400' : 'text-red-400'}`}>
-              {toast}
+            <p className="mt-6 text-gray-400 max-w-md text-lg">
+              {description}
             </p>
-          )}
-        </motion.form>
-      </div>
-    </section>
+
+            <div className="mt-10 space-y-4">
+              {socials.map((social) => (
+                <motion.a
+                  key={social._id}
+                  whileHover={{ x: 6 }}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 p-4 rounded-xl border border-gray-800 bg-gray-900/40 backdrop-blur-sm hover:border-[#27CBCB]/30 transition-colors"
+                >
+                  <span className="text-2xl">
+                    {getSocialIcon(social.icon)}
+                  </span>
+                  <div>
+                    <p className="font-medium text-gray-200">
+                      {getSocialDisplayName(social.name)}
+                    </p>
+                    <p className="text-sm text-gray-400">{social.description}</p>
+                  </div>
+                  <ExternalLink className="ml-auto opacity-60 text-gray-400" size={18} />
+                </motion.a>
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.form
+            variants={fade}
+            initial="hidden"
+            whileInView="show"
+            onSubmit={handleSubmit}
+            className="p-8 rounded-3xl border border-gray-800 bg-linear-to-b from-gray-900/60 to-gray-900/30 backdrop-blur-xl space-y-5"
+          >
+            <h3 className="text-2xl font-semibold text-gray-200">
+              Send a Message
+            </h3>
+
+            <div>
+              <input
+                name="name"
+                placeholder="Your Name"
+                value={form.name}
+                onChange={handleChange}
+                className="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-emerald-500 outline-none transition-colors text-gray-200 placeholder-gray-500"
+              />
+              {errors.name && (
+                <p className="text-sm text-red-400 mt-1">{errors.name}</p>
+              )}
+            </div>
+
+            <div>
+              <input
+                name="email"
+                placeholder="Email Address"
+                value={form.email}
+                onChange={handleChange}
+                className="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-emerald-500 outline-none transition-colors text-gray-200 placeholder-gray-500"
+              />
+              {errors.email && (
+                <p className="text-sm text-red-400 mt-1">{errors.email}</p>
+              )}
+            </div>
+
+            <div>
+              <textarea
+                name="message"
+                rows="5"
+                placeholder="Your Message"
+                value={form.message}
+                onChange={handleChange}
+                className="w-full p-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-emerald-500 outline-none transition-colors text-gray-200 placeholder-gray-500 resize-none"
+              />
+              {errors.message && (
+                <p className="text-sm text-red-400 mt-1">{errors.message}</p>
+              )}
+            </div>
+
+            <button 
+              type="submit"
+              disabled={formLoading}
+              className="cursor-pointer w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send className="w-4 h-4" />
+              {formLoading ? "Sending..." : "Send Message"}
+            </button>
+          </motion.form>
+        </div>
+      </section>
+    </>
   );
 };
 

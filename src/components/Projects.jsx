@@ -6,18 +6,18 @@ import { FaGithub } from "react-icons/fa";
 import { projectService } from "../services/public-api/projectService";
 
 // Fallback images
-import careerquillImg from "../assets/careerquill.png";
-import flowmindImg from "../assets/flowmind.png";
-import proctorlyImg from "../assets/proctorly.png";
-import hiremeImg from "../assets/hireme.png";
+// import careerquillImg from "../assets/careerquill.png";
+// import flowmindImg from "../assets/flowmind.png";
+// import proctorlyImg from "../assets/proctorly.png";
+// import hiremeImg from "../assets/hireme.png";
 
-const fallbackImages = {
-  "CareerQuill": careerquillImg,
-  "FlowMind-AI": flowmindImg,
-  "Proctorly": proctorlyImg,
-  "HireMe": hiremeImg,
-  "TaskFlow": flowmindImg,
-};
+// const fallbackImages = {
+//   "CareerQuill": careerquillImg,
+//   "FlowMind-AI": flowmindImg,
+//   "Proctorly": proctorlyImg,
+//   "HireMe": hiremeImg,
+//   "TaskFlow": flowmindImg,
+// };
 
 const ProjectCard = ({ project, onOpen }) => {
   const [expanded, setExpanded] = useState(false);
@@ -29,7 +29,7 @@ const ProjectCard = ({ project, onOpen }) => {
 
   const getImageSrc = () => {
     if (imageError || !project.projectImage) {
-      return fallbackImages[project.title] || careerquillImg;
+      return fallbackImages[project.title];
     }
     return project.projectImage;
   };
@@ -146,7 +146,7 @@ const ProjectModal = ({ project, isOpen, onClose }) => {
 
   const getImageSrc = () => {
     if (imageError || !project.projectImage) {
-      return fallbackImages[project.title] || careerquillImg;
+      return fallbackImages[project.title];
     }
     return project.projectImage;
   };

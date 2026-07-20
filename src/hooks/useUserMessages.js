@@ -13,11 +13,15 @@ export const useUserMessages = () => {
     setError(null);
     try {
       const response = await userMessagesService.getAll();
-      setMessages(response.data);
-      setTotal(response.data.length);
-      return response.data;
+      if (response.status && response.data) {
+        setMessages(response.data);
+        setTotal(response.data.length);
+        return response.data;
+      }
+      return [];
     } catch (err) {
-      setError(err.message || 'Failed to fetch messages');
+      const errorMsg = err.response?.data?.message || 'Failed to fetch messages';
+      setError(errorMsg);
       throw err;
     } finally {
       setIsLoading(false);
@@ -29,10 +33,14 @@ export const useUserMessages = () => {
     setError(null);
     try {
       const response = await userMessagesService.getById(id);
-      setCurrentMessage(response.data);
-      return response.data;
+      if (response.status && response.data) {
+        setCurrentMessage(response.data);
+        return response.data;
+      }
+      return null;
     } catch (err) {
-      setError(err.message || 'Failed to fetch message');
+      const errorMsg = err.response?.data?.message || 'Failed to fetch message';
+      setError(errorMsg);
       throw err;
     } finally {
       setIsLoading(false);
@@ -47,22 +55,6 @@ export const useUserMessages = () => {
     setError(null);
   };
 
-  const markAsRead = (id) => {
-    setMessages(prev => 
-      prev.map(msg => 
-        msg._id === id ? { ...msg, status: 'read' } : msg
-      )
-    );
-  };
-
-  const toggleStar = (id) => {
-    setMessages(prev => 
-      prev.map(msg => 
-        msg._id === id ? { ...msg, isStarred: !msg.isStarred } : msg
-      )
-    );
-  };
-
   return {
     messages,
     currentMessage,
@@ -72,8 +64,6 @@ export const useUserMessages = () => {
     getAll,
     getById,
     clearCurrent,
-    clearError,
-    markAsRead,
-    toggleStar
+    clearError
   };
 };

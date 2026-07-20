@@ -10,14 +10,7 @@ import {
   Download,
   RefreshCw,
   AlertCircle,
-  Star,
-  StarOff,
   Inbox,
-  CheckCircle,
-  Clock,
-  XCircle,
-  Filter,
-  Trash2,
   MessageSquare,
   User,
   Phone
@@ -26,14 +19,12 @@ import { useUserMessages } from '../../../hooks/useUserMessages';
 import { useTheme } from '../../../context/ThemeContext';
 
 const UserMessagesAll = () => {
-  const { messages, isLoading, error, getAll, toggleStar, markAsRead, clearError } = useUserMessages();
+  const { messages, isLoading, error, getAll, clearError } = useUserMessages();
   const { isDark } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [selectedItems, setSelectedItems] = useState([]);
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterPriority, setFilterPriority] = useState('all');
 
   useEffect(() => {
     fetchData();
@@ -51,13 +42,9 @@ const UserMessagesAll = () => {
     const matchesSearch = 
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.message?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
-    const matchesPriority = filterPriority === 'all' || item.priority === filterPriority;
-    
-    return matchesSearch && matchesStatus && matchesPriority;
+    return matchesSearch;
   });
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -81,14 +68,6 @@ const UserMessagesAll = () => {
     );
   };
 
-  const handleToggleStar = (id) => {
-    toggleStar(id);
-  };
-
-  const handleMarkAsRead = (id) => {
-    markAsRead(id);
-  };
-
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -109,38 +88,6 @@ const UserMessagesAll = () => {
         year: 'numeric'
       }).format(date);
     }
-  };
-
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      unread: { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', label: 'Unread' },
-      read: { icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20', label: 'Read' },
-      spam: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Spam' }
-    };
-    const config = statusConfig[status] || statusConfig.unread;
-    const Icon = config.icon;
-    
-    return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${config.bg} ${config.color} ${config.border}`}>
-        <Icon size={12} />
-        {config.label}
-      </span>
-    );
-  };
-
-  const getPriorityBadge = (priority) => {
-    const priorityConfig = {
-      high: { color: 'text-red-400', bg: 'bg-red-500/10', label: 'High' },
-      medium: { color: 'text-yellow-400', bg: 'bg-yellow-500/10', label: 'Medium' },
-      low: { color: 'text-green-400', bg: 'bg-green-500/10', label: 'Low' }
-    };
-    const config = priorityConfig[priority] || priorityConfig.low;
-    
-    return (
-      <span className={`px-2 py-0.5 rounded-full text-xs ${config.bg} ${config.color}`}>
-        {config.label}
-      </span>
-    );
   };
 
   if (isLoading) {
@@ -202,7 +149,7 @@ const UserMessagesAll = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         <div className={`rounded-xl p-4 border
           ${isDark ? 'bg-[#111111] border-gray-800' : 'bg-white border-gray-200'}`}
         >
@@ -222,10 +169,14 @@ const UserMessagesAll = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Mail size={18} className="text-blue-400" />
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Unread</span>
+              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Today</span>
             </div>
             <span className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              {messages.filter(m => m.status === 'unread').length}
+              {messages.filter(m => {
+                const today = new Date();
+                const msgDate = new Date(m.createdAt);
+                return msgDate.toDateString() === today.toDateString();
+              }).length}
             </span>
           </div>
         </div>
@@ -234,30 +185,17 @@ const UserMessagesAll = () => {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CheckCircle size={18} className="text-green-400" />
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Read</span>
+              <User size={18} className="text-purple-400" />
+              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Unique</span>
             </div>
             <span className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              {messages.filter(m => m.status === 'read').length}
-            </span>
-          </div>
-        </div>
-        <div className={`rounded-xl p-4 border
-          ${isDark ? 'bg-[#111111] border-gray-800' : 'bg-white border-gray-200'}`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Star size={18} className="text-yellow-400" />
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Starred</span>
-            </div>
-            <span className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              {messages.filter(m => m.isStarred).length}
+              {new Set(messages.map(m => m.email)).size}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Filters & Search */}
+      {/* Search */}
       <div className={`rounded-xl p-4 mb-6 border
         ${isDark ? 'bg-[#111111] border-gray-800' : 'bg-white border-gray-200'}`}
       >
@@ -266,7 +204,7 @@ const UserMessagesAll = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
             <input
               type="text"
-              placeholder="Search messages..."
+              placeholder="Search by name, email, or message..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={`w-full border rounded-lg pl-10 pr-4 py-2 
@@ -277,70 +215,17 @@ const UserMessagesAll = () => {
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className={`border rounded-lg px-4 py-2 
-                ${isDark 
-                  ? 'bg-gray-900/50 border-gray-700 text-white' 
-                  : 'bg-gray-50 border-gray-300 text-gray-900'
-                } focus:outline-none focus:border-[#27CBCB] focus:ring-1 focus:ring-[#27CBCB] transition-colors`}
+          {selectedItems.length > 0 && (
+            <button
+              onClick={() => {
+                setSelectedItems([]);
+              }}
+              className="px-4 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors text-sm flex items-center gap-2"
             >
-              <option value="all">All Status</option>
-              <option value="unread">Unread</option>
-              <option value="read">Read</option>
-              <option value="spam">Spam</option>
-            </select>
-            
-            <select
-              value={filterPriority}
-              onChange={(e) => setFilterPriority(e.target.value)}
-              className={`border rounded-lg px-4 py-2 
-                ${isDark 
-                  ? 'bg-gray-900/50 border-gray-700 text-white' 
-                  : 'bg-gray-50 border-gray-300 text-gray-900'
-                } focus:outline-none focus:border-[#27CBCB] focus:ring-1 focus:ring-[#27CBCB] transition-colors`}
-            >
-              <option value="all">All Priority</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-
-            {selectedItems.length > 0 && (
-              <button
-                onClick={() => {
-                  selectedItems.forEach(id => markAsRead(id));
-                  setSelectedItems([]);
-                }}
-                className="px-4 py-2 bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors text-sm flex items-center gap-2"
-              >
-                <CheckCircle size={16} />
-                Mark as Read
-              </button>
-            )}
-          </div>
-        </div>
-
-        {selectedItems.length > 0 && (
-          <div className={`flex items-center gap-3 mt-4 pt-4 border-t 
-            ${isDark ? 'border-gray-800' : 'border-gray-200'}`}
-          >
-            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              {selectedItems.length} message{selectedItems.length > 1 ? 's' : ''} selected
-            </span>
-            <button className={`px-3 py-1 rounded-lg transition-colors text-sm flex items-center gap-2
-              ${isDark 
-                ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20' 
-                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-              }`}
-            >
-              <Download size={16} />
-              Export
+              Clear Selection ({selectedItems.length})
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Table */}
@@ -364,10 +249,7 @@ const UserMessagesAll = () => {
                   From
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider hidden md:table-cell">
-                  Subject
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider hidden lg:table-cell">
-                  Status
+                  Message
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider hidden sm:table-cell">
                   Date
@@ -380,7 +262,7 @@ const UserMessagesAll = () => {
             <tbody className={`divide-y ${isDark ? 'divide-gray-800/50' : 'divide-gray-200'}`}>
               {currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-4 py-8 text-center">
+                  <td colSpan="5" className="px-4 py-8 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <MessageSquare size={48} className="text-gray-600" />
                       <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>No messages found</p>
@@ -400,52 +282,20 @@ const UserMessagesAll = () => {
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => handleToggleStar(item._id)}
-                          className="text-gray-500 hover:text-yellow-400 transition-colors flex-shrink-0"
-                        >
-                          {item.isStarred ? (
-                            <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                          ) : (
-                            <StarOff size={16} />
-                          )}
-                        </button>
-                        <div className="min-w-0">
-                          <p className={`text-sm font-medium truncate ${item.status === 'unread' ? 'text-white font-semibold' : isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {item.name}
-                          </p>
-                          <p className={`text-xs truncate ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                            {item.email}
-                          </p>
-                          {item.phone && (
-                            <p className={`text-xs truncate ${isDark ? 'text-gray-500' : 'text-gray-400'} flex items-center gap-1`}>
-                              <Phone size={12} />
-                              {item.phone}
-                            </p>
-                          )}
-                          {item.status === 'unread' && (
-                            <span className="w-2 h-2 bg-blue-400 rounded-full inline-block mt-1"></span>
-                          )}
-                        </div>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {item.name || 'Anonymous'}
+                        </p>
+                        <p className={`text-xs truncate ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                          {item.email || 'No email'}
+                        </p>
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">
                       <div>
-                        <p className={`text-sm truncate max-w-[200px] ${item.status === 'unread' ? 'font-semibold' : ''} ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                          {item.subject}
+                        <p className={`text-sm truncate max-w-[300px] ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {item.message}
                         </p>
-                        <p className={`text-xs truncate max-w-[200px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                          {item.message.substring(0, 60)}...
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
-                      <div className="space-y-1">
-                        {getStatusBadge(item.status)}
-                        <div>
-                          {getPriorityBadge(item.priority)}
-                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
@@ -454,7 +304,7 @@ const UserMessagesAll = () => {
                           {formatDate(item.createdAt)}
                         </p>
                         <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                          {item.source || 'Direct'}
+                          {new Date(item.createdAt).toLocaleTimeString()}
                         </p>
                       </div>
                     </td>
@@ -467,15 +317,6 @@ const UserMessagesAll = () => {
                         >
                           <Eye size={18} className="text-gray-400 hover:text-white" />
                         </Link>
-                        {item.status === 'unread' && (
-                          <button
-                            onClick={() => handleMarkAsRead(item._id)}
-                            className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-                            title="Mark as Read"
-                          >
-                            <CheckCircle size={18} className="text-gray-400 hover:text-green-400" />
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
