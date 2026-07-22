@@ -1,4 +1,6 @@
 import { useEffect, useState, useRef } from "react";
+import { BookOpen } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const sections = ["about", "experience", "stack", "projects", "contact"];
 
@@ -7,8 +9,14 @@ const Navbar = () => {
   const [active, setActive] = useState("");
   const [hidden, setHidden] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isDevDocPage, setIsDevDocPage] = useState(false);
 
   const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    // Check if we're on the dev doc page
+    setIsDevDocPage(window.location.pathname === '/dev-doc');
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -30,6 +38,8 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
+    if (isDevDocPage) return; // Skip observer on dev doc page
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -49,7 +59,7 @@ const Navbar = () => {
       if (el) observer.observe(el);
     });
     return () => observer.disconnect();
-  }, []);
+  }, [isDevDocPage]);
 
   const scrollToTop = (e) => {
     e.preventDefault();
@@ -72,6 +82,45 @@ const Navbar = () => {
       behavior: "smooth",
     });
   };
+
+  // If on dev doc page, show simplified navbar
+  if (isDevDocPage) {
+    return (
+      <nav
+        className={`fixed top-0 left-0 w-full z-50 h-20
+          px-4 sm:px-8 md:px-15 flex justify-between items-center font-mono
+          transition-all duration-300 ease-out
+          ${hidden ? "-translate-y-full" : "translate-y-0"}
+          ${
+            scrolled
+              ? "bg-[#101318]/80 backdrop-blur border-b border-[#27CBCB]/20 shadow-[0_8px_30px_rgba(39,203,203,0.15)]"
+              : "bg-transparent"
+          }
+        `}
+      >
+        <Link to="/">
+          <h1 className="text-xl sm:text-2xl font-bold cursor-pointer text-gray-400 hover:text-[#27CBCB] transition-colors">
+            <pre className="text-base sm:text-lg md:text-xl">&lt;/joyal&gt;</pre>
+          </h1>
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link 
+            to="/dev-doc" 
+            className="flex items-center gap-2 px-4 py-2 bg-[#27CBCB]/10 text-[#27CBCB] rounded-lg hover:bg-[#27CBCB]/20 transition-colors text-sm"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span className="hidden sm:inline">Dev Docs</span>
+          </Link>
+          <Link 
+            to="/" 
+            className="px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm"
+          >
+            Back to Portfolio
+          </Link>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <>
@@ -119,6 +168,13 @@ const Navbar = () => {
               </a>
             );
           })}
+          <Link 
+            to="/dev-doc" 
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#27CBCB]/10 text-[#27CBCB] rounded-lg hover:bg-[#27CBCB]/20 transition-colors text-sm"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Dev Docs</span>
+          </Link>
         </div>
         <button
           className="md:hidden text-gray-400 hover:text-[#27CBCB] transition-colors p-2"
@@ -166,8 +222,16 @@ const Navbar = () => {
               </a>
             );
           })}
+          <Link 
+            to="/dev-doc" 
+            className="flex items-center gap-2 px-4 py-2 bg-[#27CBCB]/10 text-[#27CBCB] rounded-lg hover:bg-[#27CBCB]/20 transition-colors text-lg"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <BookOpen className="w-5 h-5" />
+            Dev Docs
+          </Link>
           <button
-            className="mt-12 text-gray-400 hover:text-[#27CBCB] transition-colors text-lg"
+            className="mt-4 text-gray-400 hover:text-[#27CBCB] transition-colors text-lg"
             onClick={() => setMobileMenuOpen(false)}
           >
             Close Menu

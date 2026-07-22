@@ -71,6 +71,8 @@ import ProjectView from "./components/Admin/Project/ProjectView";
 import UserMessagesAll from './components/Admin/UserMessages/UserMessagesAll';
 import UserMessagesView from './components/Admin/UserMessages/UserMessagesView';
 
+import DevDoc from './pages/DevDoc';
+
 import { ThemeProvider } from "./context/ThemeContext";
 
 // App initialization component
@@ -107,6 +109,9 @@ const AppContent = () => {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Portfolio />} />
+
+          <Route path="/dev-doc" element={<DevDoc />} />
+
           <Route path="/admin/login" element={<Login />} />
 
           {/* Protected Admin Routes */}

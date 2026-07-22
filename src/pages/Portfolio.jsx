@@ -3,10 +3,11 @@ import Hero from "../components/Hero";
 import About from "../components/About";
 import Stack from "../components/Stack";
 import Projects from "../components/Projects";
-import Experience from "../components/Experience"; // Add this import
+import Experience from "../components/Experience";
 import Contact from "../components/Contact";
 import Footer from "../components/Footer";
 import Background from "../components/ui/Background";
+import Chatbot from "../components/Chatbot/Chatbot";
 
 const Portfolio = () => {
   return (
@@ -24,7 +25,6 @@ const Portfolio = () => {
         <About />
       </section>
       
-      {/* Add Experience Section */}
       <section id="experience" className="scroll-mt-10">
         <div className="flex flex-row items-center px-4 sm:px-6 lg:ml-50 mt-12 sm:mt-16 lg:mt-20 p-3 sm:p-5 space-x-3">
           <p className="cursor-pointer text-[#27CBCB] text-sm sm:text-base">/experience</p>
@@ -40,6 +40,7 @@ const Portfolio = () => {
         </div>
         <Stack />
       </section>
+      
       <section id="projects" className="scroll-mt-10">
         <div className="flex flex-row items-center px-4 sm:px-6 lg:ml-50 mt-12 sm:mt-16 lg:mt-20 p-3 sm:p-5 space-x-3">
           <p className="cursor-pointer text-[#27CBCB] text-sm sm:text-base">/projects</p>
@@ -47,6 +48,7 @@ const Portfolio = () => {
         </div>
         <Projects />
       </section>
+      
       <section id="contact" className="scroll-mt-10">
         <div className="flex flex-row items-center px-4 sm:px-6 lg:ml-50 mt-12 sm:mt-16 lg:mt-20 p-3 sm:p-5 space-x-3">
           <p className="cursor-pointer text-[#27CBCB] text-sm sm:text-base">/contact</p>
@@ -54,7 +56,9 @@ const Portfolio = () => {
         </div>
         <Contact />
       </section>
+      
       <Footer />
+      <Chatbot />
     </div>
   );
 };
