@@ -72,6 +72,7 @@ import UserMessagesAll from './components/Admin/UserMessages/UserMessagesAll';
 import UserMessagesView from './components/Admin/UserMessages/UserMessagesView';
 
 import DevDoc from './pages/DevDoc';
+import AuthCallback from './pages/AuthCallback';
 
 import { ThemeProvider } from "./context/ThemeContext";
 
@@ -109,10 +110,12 @@ const AppContent = () => {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Portfolio />} />
-
           <Route path="/dev-doc" element={<DevDoc />} />
-
           <Route path="/admin/login" element={<Login />} />
+          
+          {/* OAuth Callback Routes */}
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/error" element={<AuthCallback />} />
 
           {/* Protected Admin Routes */}
           <Route
@@ -183,14 +186,12 @@ const AppContent = () => {
             <Route path="category/view/:id" element={<CategoryView />} />
 
             {/* Project Module */}
-
             <Route path="project" element={<ProjectAll />} />
             <Route path="project/add" element={<ProjectAdd />} />
             <Route path="project/edit/:id" element={<ProjectEdit />} />
             <Route path="project/view/:id" element={<ProjectView />} />
 
             {/* User Messages Module */}
-
             <Route path="user-messages" element={<UserMessagesAll />} />
             <Route path="user-messages/view/:id" element={<UserMessagesView />} />
           </Route>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDispatch, useSelector } from 'react-redux';
 import { 
   BookOpen, 
   User, 
@@ -15,8 +16,10 @@ import {
   LayoutDashboard,
   Code,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  UserCircle
 } from 'lucide-react';
+import { setUserFromStorage, logoutUser, googleLogin } from '../store/slices/authGoogleSlice';
 import DevDocAuth from '../components/DevDoc/DevDocAuth';
 import DevDocRegister from '../components/DevDoc/DevDocRegister';
 import DevDocLogin from '../components/DevDoc/DevDocLogin';
@@ -26,16 +29,16 @@ import DevDocExperience from '../components/DevDoc/DevDocExperience';
 import DevDocStack from '../components/DevDoc/DevDocStack';
 import DevDocProject from '../components/DevDoc/DevDocProject';
 import DevDocContact from '../components/DevDoc/DevDocContact';
+import ProfileDashboard from '../components/DevDoc/Profile/ProfileDashboard';
 import DevDocSidebar from '../components/DevDoc/DevDocSidebar';
 import DevDocHeader from '../components/DevDoc/DevDocHeader';
 import DevDocFooter from '../components/DevDoc/DevDocFooter';
 import Background from '../components/ui/Background';
 
 const DevDoc = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const dispatch = useDispatch();
+  const { isAuthenticated, user, isLoading, error, isLoggingOut } = useSelector((state) => state.auth);
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [showAuth, setShowAuth] = useState(true);
   const [authMode, setAuthMode] = useState('login');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -43,13 +46,22 @@ const DevDoc = () => {
 
   // Check for existing session on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('devDocUser');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      setIsAuthenticated(true);
-      setShowAuth(false);
-    }
+    const restored = dispatch(setUserFromStorage());
+    console.log('📄 DevDoc - Auth check:', { restored, isAuthenticated, user });
+  }, [dispatch]);
 
+  // Update showAuth based on auth state
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setShowAuth(false);
+      console.log('✅ User authenticated:', user.name);
+    } else {
+      setShowAuth(true);
+    }
+  }, [isAuthenticated, user]);
+
+  // Handle mobile responsiveness
+  useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
       if (window.innerWidth < 1024) {
@@ -62,62 +74,67 @@ const DevDoc = () => {
   }, []);
 
   const handleRegister = (userData) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      const newUser = {
-        id: Date.now().toString(),
-        name: userData.name,
-        email: userData.email,
-        registeredAt: new Date().toISOString()
-      };
-      localStorage.setItem('devDocUser', JSON.stringify(newUser));
-      setUser(newUser);
-      setIsAuthenticated(true);
-      setShowAuth(false);
-      setIsLoading(false);
-    }, 1000);
+    const newUser = {
+      id: Date.now().toString(),
+      name: userData.name,
+      email: userData.email,
+      registeredAt: new Date().toISOString()
+    };
+    localStorage.setItem('devDocUser', JSON.stringify(newUser));
+    localStorage.setItem('isAuthenticated', 'true');
+    localStorage.setItem('user', JSON.stringify(newUser));
+    dispatch(setUserFromStorage());
   };
 
   const handleLogin = (credentials) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      const savedUser = localStorage.getItem('devDocUser');
-      if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        if (userData.email === credentials.email) {
-          setUser(userData);
-          setIsAuthenticated(true);
-          setShowAuth(false);
-          setIsLoading(false);
-          return;
-        }
+    const savedUser = localStorage.getItem('devDocUser');
+    if (savedUser) {
+      const userData = JSON.parse(savedUser);
+      if (userData.email === credentials.email) {
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('user', JSON.stringify(userData));
+        dispatch(setUserFromStorage());
+        return;
       }
-      const newUser = {
-        id: Date.now().toString(),
-        name: credentials.email.split('@')[0],
-        email: credentials.email,
-        registeredAt: new Date().toISOString()
-      };
-      localStorage.setItem('devDocUser', JSON.stringify(newUser));
-      setUser(newUser);
-      setIsAuthenticated(true);
-      setShowAuth(false);
-      setIsLoading(false);
-    }, 1000);
+    }
+    const newUser = {
+      id: Date.now().toString(),
+      name: credentials.email.split('@')[0],
+      email: credentials.email,
+      registeredAt: new Date().toISOString()
+    };
+    localStorage.setItem('devDocUser', JSON.stringify(newUser));
+    localStorage.setItem('isAuthenticated', 'true');
+    localStorage.setItem('user', JSON.stringify(newUser));
+    dispatch(setUserFromStorage());
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('devDocUser');
-    setUser(null);
-    setIsAuthenticated(false);
-    setShowAuth(true);
-    setCurrentPage('dashboard');
+  const handleGoogleLogin = () => {
+    dispatch(googleLogin());
+  };
+
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
   };
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  // Page components mapping
+  const pageComponents = {
+    dashboard: DevDocDashboard,
+    about: DevDocAbout,
+    experience: DevDocExperience,
+    stack: DevDocStack,
+    project: DevDocProject,
+    contact: DevDocContact,
+    profile: ProfileDashboard,
+  };
+
+  const PageComponent = pageComponents[currentPage] || DevDocDashboard;
+
+  // If not authenticated, show auth page
   if (!isAuthenticated && showAuth) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
@@ -135,6 +152,7 @@ const DevDoc = () => {
               <DevDocLogin 
                 key="login"
                 onLogin={handleLogin}
+                onGoogleLogin={handleGoogleLogin}
                 onSwitchToRegister={() => setAuthMode('register')}
                 isLoading={isLoading}
               />
@@ -142,6 +160,7 @@ const DevDoc = () => {
               <DevDocRegister 
                 key="register"
                 onRegister={handleRegister}
+                onGoogleLogin={handleGoogleLogin}
                 onSwitchToLogin={() => setAuthMode('login')}
                 isLoading={isLoading}
               />
@@ -156,16 +175,15 @@ const DevDoc = () => {
     <div className="min-h-screen bg-[#0A0A0A] text-gray-300">
       <Background />
       
-      {/* Header */}
       <DevDocHeader 
         user={user}
         onLogout={handleLogout}
         onToggleSidebar={toggleSidebar}
         isSidebarOpen={isSidebarOpen}
         isMobile={isMobile}
+        isLoggingOut={isLoggingOut}
       />
 
-      {/* Sidebar + Main Content */}
       <div className="flex pt-16">
         <DevDocSidebar 
           currentPage={currentPage}
@@ -174,25 +192,18 @@ const DevDoc = () => {
           isMobile={isMobile}
         />
 
-        {/* Main Content */}
         <main className={`flex-1 transition-all duration-300 min-h-[calc(100vh-120px)]
           ${isSidebarOpen ? 'ml-64' : 'ml-0'}
           ${isMobile ? 'ml-0' : ''}
         `}>
           <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto">
             <AnimatePresence mode="wait">
-              {currentPage === 'dashboard' && <DevDocDashboard key="dashboard" user={user} />}
-              {currentPage === 'about' && <DevDocAbout key="about" />}
-              {currentPage === 'experience' && <DevDocExperience key="experience" />}
-              {currentPage === 'stack' && <DevDocStack key="stack" />}
-              {currentPage === 'project' && <DevDocProject key="project" />}
-              {currentPage === 'contact' && <DevDocContact key="contact" />}
+              <PageComponent key={currentPage} user={user} />
             </AnimatePresence>
           </div>
         </main>
       </div>
 
-      {/* Footer */}
       <DevDocFooter />
     </div>
   );

@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
-import { User, Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, Shield, Chrome } from 'lucide-react';
 import { useState } from 'react';
 
-const DevDocRegister = ({ onRegister, onSwitchToLogin, isLoading }) => {
+const DevDocRegister = ({ onRegister, onGoogleLogin, onSwitchToLogin, isLoading }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -151,6 +151,25 @@ const DevDocRegister = ({ onRegister, onSwitchToLogin, isLoading }) => {
           )}
         </button>
       </form>
+
+      {/* Divider */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-800"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-4 bg-[#111111] text-gray-500">Or continue with</span>
+        </div>
+      </div>
+
+      {/* Google Register Button */}
+      <button
+        onClick={onGoogleLogin}
+        className="w-full flex items-center justify-center gap-3 py-2.5 border border-gray-700 rounded-lg hover:bg-gray-800/50 transition-colors"
+      >
+        <Chrome className="w-5 h-5 text-[#27CBCB]" />
+        <span className="text-gray-300">Sign up with Google</span>
+      </button>
 
       <div className="mt-4 text-center">
         <button

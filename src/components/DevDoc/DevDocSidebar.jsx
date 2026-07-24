@@ -9,12 +9,14 @@ import {
   ChevronRight,
   Home,
   Code,
-  BookOpen
+  BookOpen,
+  UserCircle
 } from 'lucide-react';
 
 const DevDocSidebar = ({ currentPage, onPageChange, isOpen, isMobile }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'profile', label: 'Profile', icon: UserCircle },
     { id: 'about', label: 'About', icon: User },
     { id: 'experience', label: 'Experience', icon: Briefcase },
     { id: 'stack', label: 'Stack', icon: Layers },
@@ -30,7 +32,7 @@ const DevDocSidebar = ({ currentPage, onPageChange, isOpen, isMobile }) => {
       {isMobile && isOpen && (
         <div 
           className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40"
-          onClick={() => onPageChange(currentPage)} // Close sidebar on click outside
+          onClick={() => onPageChange(currentPage)}
         />
       )}
 
