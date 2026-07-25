@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { User, Mail, Lock, Eye, EyeOff, Shield, Chrome } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, Shield, Chrome, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
+import { authService } from '../../services/developer-api/auth.service';
 
 const DevDocRegister = ({ onRegister, onGoogleLogin, onSwitchToLogin, isLoading }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,11 +13,16 @@ const DevDocRegister = ({ onRegister, onGoogleLogin, onSwitchToLogin, isLoading 
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState('');
+  const [registerSuccess, setRegisterSuccess] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: '' }));
+    setRegisterError('');
+    setRegisterSuccess('');
   };
 
   const validate = () => {
@@ -33,10 +39,33 @@ const DevDocRegister = ({ onRegister, onGoogleLogin, onSwitchToLogin, isLoading 
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      onRegister({ name: formData.name, email: formData.email, password: formData.password });
+    if (!validate()) return;
+
+    setRegisterLoading(true);
+    setRegisterError('');
+    setRegisterSuccess('');
+
+    try {
+      const response = await authService.register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (response.status) {
+        setRegisterSuccess('Registration successful! Redirecting...');
+        setTimeout(() => {
+          onRegister({ name: formData.name, email: formData.email });
+        }, 1500);
+      } else {
+        setRegisterError(response.message || 'Registration failed');
+      }
+    } catch (error) {
+      setRegisterError(error.message || 'Registration failed');
+    } finally {
+      setRegisterLoading(false);
     }
   };
 
@@ -58,6 +87,20 @@ const DevDocRegister = ({ onRegister, onGoogleLogin, onSwitchToLogin, isLoading 
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {registerError && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg flex items-start gap-2 text-sm">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span>{registerError}</span>
+          </div>
+        )}
+        
+        {registerSuccess && (
+          <div className="bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-lg flex items-start gap-2 text-sm">
+            <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span>{registerSuccess}</span>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-gray-400 mb-1">Full Name</label>
           <div className="relative">
@@ -138,12 +181,12 @@ const DevDocRegister = ({ onRegister, onGoogleLogin, onSwitchToLogin, isLoading 
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={registerLoading}
           className="w-full py-2.5 bg-[#27CBCB] text-black font-semibold rounded-lg hover:bg-[#27CBCB]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {isLoading ? (
+          {registerLoading ? (
             <>
-              <div className="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full" />
+              <Loader2 className="w-4 h-4 animate-spin" />
               Creating account...
             </>
           ) : (

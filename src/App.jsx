@@ -68,11 +68,11 @@ import ProjectAdd from "./components/Admin/Project/ProjectAdd";
 import ProjectEdit from "./components/Admin/Project/ProjectEdit";
 import ProjectView from "./components/Admin/Project/ProjectView";
 
-import UserMessagesAll from './components/Admin/UserMessages/UserMessagesAll';
-import UserMessagesView from './components/Admin/UserMessages/UserMessagesView';
+import UserMessagesAll from "./components/Admin/UserMessages/UserMessagesAll";
+import UserMessagesView from "./components/Admin/UserMessages/UserMessagesView";
 
-import DevDoc from './pages/DevDoc';
-import AuthCallback from './pages/AuthCallback';
+import DevDoc from "./pages/DevDoc";
+import AuthCallback from "./pages/AuthCallback";
 
 import { ThemeProvider } from "./context/ThemeContext";
 
@@ -112,7 +112,7 @@ const AppContent = () => {
           <Route path="/" element={<Portfolio />} />
           <Route path="/dev-doc" element={<DevDoc />} />
           <Route path="/admin/login" element={<Login />} />
-          
+
           {/* OAuth Callback Routes */}
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/auth/error" element={<AuthCallback />} />
@@ -193,7 +193,10 @@ const AppContent = () => {
 
             {/* User Messages Module */}
             <Route path="user-messages" element={<UserMessagesAll />} />
-            <Route path="user-messages/view/:id" element={<UserMessagesView />} />
+            <Route
+              path="user-messages/view/:id"
+              element={<UserMessagesView />}
+            />
           </Route>
 
           {/* 404 - Catch all */}

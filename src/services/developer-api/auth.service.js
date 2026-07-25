@@ -1,6 +1,18 @@
 import axiosInstance from '../../utils/axiosInterceptor';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const API_KEY = import.meta.env.VITE_API_KEY || 'your-api-key';
+const API_VERSION = import.meta.env.VITE_API_VERSION || '1.0';
+
+// Create axios instance with headers
+const apiClient = axiosInstance || axios.create({
+  baseURL: API_URL,
+  headers: {
+    'x-api-key': API_KEY,
+    'x-api-key-version': API_VERSION,
+    'Content-Type': 'application/json',
+  },
+});
 
 export const authService = {
   // Google OAuth Login
@@ -33,7 +45,12 @@ export const authService = {
           provider: user.provider 
         });
         
-        // Clean URL params
+        localStorage.setItem('accessToken', token);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('isAuthenticated', 'true');
+        
+        console.log('💾 Auth data saved to localStorage');
         window.history.replaceState({}, document.title, window.location.pathname);
         
         return { user, token, refreshToken };
@@ -47,12 +64,115 @@ export const authService = {
     return null;
   },
 
+  // Send OTP for Login
+  sendOTP: async (email) => {
+    try {
+      const response = await apiClient.post('/developer/auth/send-otp', { email });
+      return response.data;
+    } catch (error) {
+      console.error('Send OTP Error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Verify OTP and Login
+  verifyOTP: async (email, otp) => {
+    try {
+      const response = await apiClient.post('/developer/auth/verify-otp', { email, otp });
+      
+      if (response.data.status && response.data.data) {
+        const { user, accessToken, refreshToken } = response.data.data;
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('isAuthenticated', 'true');
+        return response.data;
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Verify OTP Error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Resend OTP
+  resendOTP: async (email) => {
+    try {
+      const response = await apiClient.post('/developer/auth/resend-otp', { email });
+      return response.data;
+    } catch (error) {
+      console.error('Resend OTP Error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Register User
+  register: async (userData) => {
+    try {
+      const response = await apiClient.post('/developer/auth/register', userData);
+      
+      if (response.data.status && response.data.data) {
+        const { user, accessToken, refreshToken } = response.data.data;
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('isAuthenticated', 'true');
+        return response.data;
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Register Error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Login with Password
+  login: async (credentials) => {
+    try {
+      const response = await apiClient.post('/developer/auth/login', credentials);
+      
+      if (response.data.status && response.data.data) {
+        const { user, accessToken, refreshToken } = response.data.data;
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('isAuthenticated', 'true');
+        return response.data;
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Login Error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Refresh Token
+  refreshToken: async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    const response = await apiClient.post('/developer/auth/refresh-token', {
+      refreshToken
+    });
+
+    if (response.data.status) {
+      localStorage.setItem('accessToken', response.data.data.accessToken);
+      if (response.data.data.refreshToken) {
+        localStorage.setItem('refreshToken', response.data.data.refreshToken);
+      }
+      return response.data.data;
+    }
+    throw new Error('Failed to refresh token');
+  },
+
   // Logout
   logout: async () => {
     try {
       const accessToken = localStorage.getItem('accessToken');
       if (accessToken) {
-        await axiosInstance.post(`${API_URL}developer/auth/logout`, {}, {
+        await apiClient.post('/developer/auth/logout', {}, {
           headers: {
             Authorization: `Bearer ${accessToken}`
           }
@@ -67,6 +187,22 @@ export const authService = {
       localStorage.removeItem('isAuthenticated');
       console.log('👋 User logged out');
     }
+  },
+
+  // Get Current User
+  getCurrentUser: async () => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) {
+      throw new Error('No access token');
+    }
+
+    const response = await apiClient.get('/developer/auth/me', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+
+    return response.data;
   },
 
   // Check if user is authenticated
