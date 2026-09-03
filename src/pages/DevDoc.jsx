@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { 
   BookOpen, 
-  User, 
-  Briefcase, 
-  Layers, 
-  FolderGit2, 
-  Mail,
   LogOut,
   Menu,
   X,
@@ -34,9 +30,18 @@ import DevDocSidebar from '../components/DevDoc/DevDocSidebar';
 import DevDocHeader from '../components/DevDoc/DevDocHeader';
 import DevDocFooter from '../components/DevDoc/DevDocFooter';
 import Background from '../components/ui/Background';
+import AIToolManage from '../components/DevDoc/AIToolList/AIToolManage';
+import AIToolCategory from '../components/DevDoc/AIToolList/AIToolCategory';
+import AIToolSubCategory from '../components/DevDoc/AIToolList/AIToolSubCategory';
+import AITool from '../components/DevDoc/AIToolList/AITool';
+
+// Import AI Tool components
+
 
 const DevDoc = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, user, isLoading, error, isLoggingOut } = useSelector((state) => state.auth);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showAuth, setShowAuth] = useState(true);
@@ -72,6 +77,24 @@ const DevDoc = () => {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Update currentPage based on route
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes('/dev-doc/ai-tools')) {
+      setCurrentPage('ai-tools');
+    } else if (path.includes('/dev-doc/profile')) {
+      setCurrentPage('profile');
+    } else if (path === '/dev-doc' || path === '/dev-doc/') {
+      setCurrentPage('dashboard');
+    } else {
+      // For other pages, extract from path
+      const page = path.split('/dev-doc/')[1]?.split('/')[0];
+      if (page) {
+        setCurrentPage(page);
+      }
+    }
+  }, [location]);
 
   const handleRegister = (userData) => {
     const newUser = {
@@ -115,24 +138,18 @@ const DevDoc = () => {
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
+    navigate('/dev-doc');
   };
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  // Page components mapping
-  const pageComponents = {
-    dashboard: DevDocDashboard,
-    about: DevDocAbout,
-    experience: DevDocExperience,
-    stack: DevDocStack,
-    project: DevDocProject,
-    contact: DevDocContact,
-    profile: ProfileDashboard,
+  const handleCloseSidebar = () => {
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    }
   };
-
-  const PageComponent = pageComponents[currentPage] || DevDocDashboard;
 
   // If not authenticated, show auth page
   if (!isAuthenticated && showAuth) {
@@ -186,19 +203,45 @@ const DevDoc = () => {
 
       <div className="flex pt-16">
         <DevDocSidebar 
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
           isOpen={isSidebarOpen}
           isMobile={isMobile}
+          onClose={handleCloseSidebar}
         />
 
         <main className={`flex-1 transition-all duration-300 min-h-[calc(100vh-120px)]
-          ${isSidebarOpen ? 'ml-64' : 'ml-0'}
+          ${isSidebarOpen && !isMobile ? 'ml-72' : 'ml-0'}
           ${isMobile ? 'ml-0' : ''}
         `}>
           <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto">
             <AnimatePresence mode="wait">
-              <PageComponent key={currentPage} user={user} />
+              <Routes>
+                {/* Main Dashboard */}
+                <Route path="/" element={<DevDocDashboard user={user} />} />
+                <Route path="/dashboard" element={<DevDocDashboard user={user} />} />
+                
+                {/* Profile */}
+                <Route path="/profile" element={<ProfileDashboard user={user} />} />
+                
+                {/* Other Pages */}
+                <Route path="/about" element={<DevDocAbout user={user} />} />
+                <Route path="/experience" element={<DevDocExperience user={user} />} />
+                <Route path="/stack" element={<DevDocStack user={user} />} />
+                <Route path="/project" element={<DevDocProject user={user} />} />
+                <Route path="/contact" element={<DevDocContact user={user} />} />
+                
+                {/* AI Tool Routes */}
+                <Route path="/ai-tools" element={<AIToolManage />} />
+                <Route path="/ai-tools/category" element={<AIToolCategory />} />
+                <Route path="/ai-tools/category/:id" element={<AIToolCategory />} />
+                <Route path="/ai-tools/sub-category" element={<AIToolSubCategory />} />
+                <Route path="/ai-tools/sub-category/:id" element={<AIToolSubCategory />} />
+                <Route path="/ai-tools/tool" element={<AITool />} />
+                <Route path="/ai-tools/tool/:id" element={<AITool />} />
+                <Route path="/ai-tools/tool/:id/edit" element={<AITool />} />
+                
+                {/* Catch all */}
+                <Route path="*" element={<DevDocDashboard user={user} />} />
+              </Routes>
             </AnimatePresence>
           </div>
         </main>
