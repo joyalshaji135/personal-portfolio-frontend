@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { handleGoogleCallback, setUserFromStorage } from '../store/slices/authGoogleSlice';
+import { setUserFromStorage } from '../store/slices/authSlice';
 
 const AuthCallback = () => {
   const [loading, setLoading] = useState(true);
@@ -27,28 +27,48 @@ const AuthCallback = () => {
           return;
         }
 
-        // Dispatch the callback handler
-        const result = await dispatch(handleGoogleCallback()).unwrap();
-        console.log('📦 Callback result:', result);
-        
-        if (result) {
-          console.log('✅ Authentication successful!');
-          setSuccess(true);
-          setLoading(false);
-          
-          // Redirect to dev doc page after a short delay
-          setTimeout(() => {
-            console.log('🚀 Redirecting to /dev-doc');
-            navigate('/dev-doc', { replace: true });
-          }, 1500);
+        // Check if we have the required parameters
+        const params = new URLSearchParams(location.search);
+        const token = params.get('token');
+        const refreshToken = params.get('refreshToken');
+        const userParam = params.get('user');
+
+        if (token && refreshToken && userParam) {
+          try {
+            const userData = JSON.parse(decodeURIComponent(userParam));
+            console.log('👤 User data received:', userData);
+            
+            // Store in localStorage
+            localStorage.setItem('accessToken', token);
+            localStorage.setItem('refreshToken', refreshToken);
+            localStorage.setItem('user', JSON.stringify(userData));
+            localStorage.setItem('isAuthenticated', 'true');
+            
+            // Update Redux state
+            dispatch(setUserFromStorage());
+            
+            console.log('✅ Authentication successful!');
+            setSuccess(true);
+            setLoading(false);
+            
+            // Redirect to dev doc page after a short delay
+            setTimeout(() => {
+              console.log('🚀 Redirecting to /dev-doc');
+              navigate('/dev-doc', { replace: true });
+            }, 1500);
+          } catch (parseError) {
+            console.error('❌ Error parsing user data:', parseError);
+            setError('Invalid user data received');
+            setLoading(false);
+          }
         } else {
-          console.log('❌ No user data received');
-          setError('Authentication failed. No user data received.');
+          console.log('❌ Missing required parameters');
+          setError('Authentication failed. Missing required parameters.');
           setLoading(false);
         }
       } catch (err) {
         console.error('❌ Auth callback error:', err);
-        setError(err || 'Authentication failed. Please try again.');
+        setError(err?.message || 'Authentication failed. Please try again.');
         setLoading(false);
       }
     };
