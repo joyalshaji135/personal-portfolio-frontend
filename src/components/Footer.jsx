@@ -1,5 +1,8 @@
 import { Heart, Coffee } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom"; // If using React Router
+// OR
+// import Link from "next/link"; // If using Next.js
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -30,15 +33,14 @@ const Footer = () => {
             <span>by Joyal Shaji</span>
           </motion.div>
           <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-6 text-sm">
-            {/* admin links */}
-            <a
-              href="/admin/login"
-              target="_blank"
-              rel="noopener noreferrer"
+            {/* admin links - FIXED */}
+            <Link
+              to="/admin/login" // React Router
+              // href="/admin/login" // Next.js
               className="text-gray-500 hover:text-gray-300 transition-colors"
             >
               Admin
-            </a>
+            </Link>
             <span className="text-gray-700 hidden sm:block">•</span>
             <a
               href="https://github.com/joyalshaji135"
